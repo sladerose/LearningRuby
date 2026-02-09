@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "My Shop" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="My Shop">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
+    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="bg-slate-50 font-sans text-slate-900 antialiased selection:bg-primary-100 selection:text-primary-900" data-controller="cart-drawer">
+    <!-- Slide-over Cart Overlay -->
+    <div data-cart-drawer-target="overlay" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-500 ease-in-out" data-action="click->cart-drawer#close"></div>
+
+    <!-- Slide-over Cart Drawer -->
+    <div data-cart-drawer-target="drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-lg translate-x-full border-l border-slate-200 bg-white shadow-2xl transition-transform duration-500 ease-in-out sm:max-w-md">
+      <div class="flex h-full flex-col overflow-y-scroll bg-white shadow-xl">
+        <div class="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+          <div class="flex items-start justify-between">
+            <h2 class="text-lg font-display font-bold text-slate-900">Shopping Cart</h2>
+            <div class="ml-3 flex h-7 items-center">
+              <button type="button" class="relative -m-2 p-2 text-slate-400 hover:text-slate-500" data-action="cart-drawer#close">
+                <span class="sr-only">Close panel</span>
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-8">
+            <%= turbo_frame_tag "cart_content", src: cart_path %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="min-h-screen flex flex-col">
+      <header class="sticky top-0 z-40 w-full glass shadow-sm">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div class="flex h-16 items-center justify-between">
+            <div class="flex items-center gap-8">
+              <h1 class="text-xl font-display font-bold tracking-tight text-slate-900">
+                <%= link_to "my_shop", root_path, class: "hover:text-primary-600 transition-colors" %>
+              </h1>
+              <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                <%= link_to "Store", root_path, class: "hover:text-primary-600" %>
+                <%= link_to "Orders", "#", class: "hover:text-primary-600" %>
+              </nav>
+            </div>
+
+            <div class="flex items-center gap-5">
+              <%= link_to cart_path, class: "group relative -m-2 flex items-center p-2", data: { action: "click->cart-drawer#open" } do %>
+                <svg class="h-6 w-6 flex-shrink-0 text-slate-400 group-hover:text-primary-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+                <% if Current.cart && Current.cart.line_items.sum(:quantity) > 0 %>
+                  <span id="cart_count" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                    <%= Current.cart.line_items.sum(:quantity) %>
+                  </span>
+                <% else %>
+                  <div id="cart_count"></div>
+                <% end %>
+                <span class="sr-only">items in cart, view bag</span>
+              <% end %>
+
+              <div class="h-6 w-px bg-slate-200"></div>
+
+              <% if authenticated? %>
+                <div class="flex items-center gap-3">
+                  <% if Current.user.admin? %>
+                    <%= link_to "Admin", products_path, class: "text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-colors" %>
+                  <% end %>
+                  <%= link_to session_path, data: { turbo_method: :delete }, class: "text-sm font-medium text-slate-700 hover:text-red-600 transition-colors" do %>
+                    Logout
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="flex items-center gap-4">
+                  <%= link_to "Sign in", new_session_path, class: "text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors" %>
+                  <%= link_to "Sign up", new_registration_path, class: "rounded-full bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 transition-all hover:scale-105 active:scale-95" %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <% if notice.present? %>
+          <div id="notice" class="mb-8 rounded-lg bg-emerald-50 p-4 text-sm font-medium text-emerald-800 border border-emerald-100 animate-in fade-in slide-in-from-top-4 duration-300">
+            <%= notice %>
+          </div>
+        <% end %>
+        <% if alert.present? %>
+          <div id="alert" class="mb-8 rounded-lg bg-rose-50 p-4 text-sm font-medium text-rose-800 border border-rose-100 animate-in fade-in slide-in-from-top-4 duration-300">
+            <%= alert %>
+          </div>
+        <% end %>
+
+        <%= yield %>
+      </main>
+    </div>
+  </body>
+</html>

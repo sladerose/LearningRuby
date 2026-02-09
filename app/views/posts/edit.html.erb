@@ -1,0 +1,6 @@
+<%= turbo_frame_tag @post do %>
+  <div class="bg-white p-6 rounded-lg shadow-sm border border-blue-200 ring-2 ring-blue-50">
+    <h2 class="text-xl font-bold text-gray-900 mb-4">Editing Post</h2>
+    <%= render "form", post: @post %>
+  </div>
+<% end %>

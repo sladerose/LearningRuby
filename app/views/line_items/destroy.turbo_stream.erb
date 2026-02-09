@@ -1,0 +1,10 @@
+<%= turbo_stream.replace "cart_content", template: "carts/show" %>
+<%= turbo_stream.replace "cart_count" do %>
+  <% if Current.cart && Current.cart.line_items.sum(:quantity) > 0 %>
+    <span id="cart_count" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+      <%= Current.cart.line_items.sum(:quantity) %>
+    </span>
+  <% else %>
+    <div id="cart_count"></div>
+  <% end %>
+<% end %>
